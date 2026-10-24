@@ -170,6 +170,8 @@ The same pattern works for tables. `example.qmd` shows a complete document.
   output or inside a `::: landscape` block. A float nested in anything else,
   such as a callout or a column layout, stays in place, and sinker prints a
   warning naming it.
+- A figure from a code cell moves with the whole cell, so echoed code and any
+  other output of that cell go with it.
 
 ## PDF output
 

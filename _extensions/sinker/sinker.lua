@@ -17,7 +17,7 @@ end
 
 local function marker(label)
   local ref = pandoc.Cite({ pandoc.Str("@" .. label) }, { pandoc.Citation(label, "NormalCitation") })
-  return pandoc.Para({ pandoc.Str("["), ref, pandoc.Space(), pandoc.Str("about"), pandoc.Space(), pandoc.Str("here]") })
+  return pandoc.Para(pandoc.Inlines({ pandoc.Str("["), ref }) .. pandoc.Inlines(" about here]"))
 end
 
 local function meta(m)
@@ -48,7 +48,7 @@ local function float(f)
 end
 
 -- Quarto keeps each float as a Div tagged with __quarto_custom_id (internal, checked on 1.7)
-local function marked(b)
+local function marked(b, hits)
   local m = b.attributes and to_move[b.attributes.__quarto_custom_id]
   if m then
     found[m.label] = true
@@ -56,24 +56,26 @@ local function marked(b)
       local sub = to_move[d.attributes.__quarto_custom_id]
       if sub then found[sub.label] = true end
     end }
-    return m
-  end
-  if b.t == "Div" and (b.classes:includes("cell") or b.classes:includes("cell-output-display")
+    table.insert(hits, m)
+  elseif b.t == "Div" and (b.classes:includes("cell") or b.classes:includes("cell-output-display")
       or b.classes:includes("landscape")) then
-    for _, c in ipairs(b.content) do
-      local hit = marked(c)
-      if hit then return hit end
-    end
+    for _, c in ipairs(b.content) do marked(c, hits) end
   end
+  return hits
 end
 
 local function move(doc)
   local keep, moved, at = pandoc.Blocks{}, {}, {}
   for _, b in ipairs(doc.blocks) do
-    local m = marked(b)
-    local g = m and m.group
+    local hits = marked(b, {})
+    local g = hits[1] and hits[1].group
     if g and not at[groups[g].target] then
-      if groups[g].markers then keep:insert(marker(m.label)) end
+      for _, h in ipairs(hits) do
+        if h.group ~= g then
+          quarto.log.warning("sinker: moved " .. h.label .. " with " .. hits[1].label .. " because they share a block")
+        end
+        if groups[h.group].markers then keep:insert(marker(h.label)) end
+      end
       moved[g] = moved[g] or pandoc.Blocks{}
       moved[g]:insert(b)
       local br = groups[g].pagebreak and pagebreak()
