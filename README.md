@@ -3,8 +3,8 @@
 A Quarto filter that moves figures and tables to the end of the document, or
 under a heading such as "Supporting Information", and keeps their
 cross-references working. It does what the LaTeX `endfloat` package does, but
-works for Word, PDF, HTML and Typst. It is not a port of `endfloat` and doesn't
-add "[Figure 1 about here]" markers.
+works for Word, PDF, HTML and Typst, and can leave "[Figure 1 about here]"
+markers in the text. It is not a port of the LaTeX package.
 
 Journals often ask for figures and tables at the end of a manuscript, or for
 supplementary figures in a separate section. With sinker you can keep each
@@ -86,6 +86,10 @@ also set one yourself with `## Figures and Tables {#floats}` and write
   adds a page break after each one; in HTML the break only applies when
   printing. In PDF it uses `\clearpage`, which also stops LaTeX from moving
   floats past the break. Defaults to `false`.
+- `markers`: set to `true` to leave a note such as "[Figure 2 about here]"
+  where each moved float used to be, as many journals ask for. The number is a
+  cross-reference, so it always matches the float's caption. Defaults to
+  `false`.
 
 ### Several destinations
 
@@ -101,6 +105,19 @@ sinker:
 
 Groups that share a heading go under it in the order you list them. If two
 groups list the same kind, the first one wins.
+
+`pagebreak` and `markers` apply per group, so you can use them for some kinds
+and not others. This leaves markers for figures but not for supplementary
+figures:
+
+```yaml
+sinker:
+  - kinds: [fig]
+    to: figures
+    markers: true
+  - kinds: [suppfig]
+    to: supporting-information
+```
 
 ## Main-text and supplementary figures
 

@@ -15,6 +15,11 @@ local function pagebreak()
   end
 end
 
+local function marker(label)
+  local ref = pandoc.Cite({ pandoc.Str("@" .. label) }, { pandoc.Citation(label, "NormalCitation") })
+  return pandoc.Para({ pandoc.Str("["), ref, pandoc.Space(), pandoc.Str("about"), pandoc.Space(), pandoc.Str("here]") })
+end
+
 local function meta(m)
   local cfg = m["sinker"]
   if not cfg then return end
@@ -22,7 +27,12 @@ local function meta(m)
   for i, g in ipairs(cfg) do
     local kinds = {}
     for _, k in ipairs(g.kinds or {}) do kinds[pandoc.utils.stringify(k)] = true end
-    groups[i] = { kinds = kinds, target = g.to and pandoc.utils.stringify(g.to), pagebreak = g.pagebreak == true }
+    groups[i] = {
+      kinds = kinds,
+      target = g.to and pandoc.utils.stringify(g.to),
+      pagebreak = g.pagebreak == true,
+      markers = g.markers == true,
+    }
   end
 end
 
@@ -46,12 +56,13 @@ local function marked(b)
       local sub = to_move[d.attributes.__quarto_custom_id]
       if sub then found[sub.label] = true end
     end }
-    return m.group
+    return m
   end
-  if b.t == "Div" and (b.classes:includes("cell") or b.classes:includes("landscape")) then
+  if b.t == "Div" and (b.classes:includes("cell") or b.classes:includes("cell-output-display")
+      or b.classes:includes("landscape")) then
     for _, c in ipairs(b.content) do
-      local g = marked(c)
-      if g then return g end
+      local hit = marked(c)
+      if hit then return hit end
     end
   end
 end
@@ -59,8 +70,10 @@ end
 local function move(doc)
   local keep, moved, at = pandoc.Blocks{}, {}, {}
   for _, b in ipairs(doc.blocks) do
-    local g = marked(b)
+    local m = marked(b)
+    local g = m and m.group
     if g and not at[groups[g].target] then
+      if groups[g].markers then keep:insert(marker(m.label)) end
       moved[g] = moved[g] or pandoc.Blocks{}
       moved[g]:insert(b)
       local br = groups[g].pagebreak and pagebreak()
