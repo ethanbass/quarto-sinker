@@ -1,0 +1,73 @@
+---
+title: Sinker example
+filters:
+  - sinker
+sinker:
+  - kinds: [suppfig]
+    to: supporting-information
+  - kinds: [tbl]
+    to: appendix-tables
+crossref:
+  custom:
+    - kind: float
+      key: suppfig
+      reference-prefix: Supplementary Figure
+      latex-env: suppfig
+---
+
+## Results
+
+Speed and stopping distance are correlated (@fig-cars). The residuals show no
+trend (@suppfig-resid), and neither do the fitted values (@suppfig-fitted).
+@tbl-coef gives the model coefficients and @tbl-data the first rows of the data.
+
+```{r}
+#| label: fig-cars
+#| fig-cap: Stopping distance against speed.
+plot(dist ~ speed, data = cars)
+```
+
+:::{#suppfig-resid}
+
+```{r}
+fit <- lm(dist ~ speed, data = cars)
+plot(fit$fitted.values, resid(fit))
+```
+
+Residuals against fitted values.
+
+:::
+
+```{r}
+#| label: tbl-coef
+#| tbl-cap: Model coefficients.
+knitr::kable(coef(summary(fit)), digits = 2)
+```
+
+:::{#suppfig-fitted}
+
+```{r}
+plot(cars$speed, fit$fitted.values)
+```
+
+Fitted values against speed.
+
+:::
+
+::: landscape
+
+```{r}
+#| label: tbl-data
+#| tbl-cap: First rows of the data.
+knitr::kable(head(cars))
+```
+
+:::
+
+## Supporting Information
+
+The supplementary figures appear above this paragraph.
+
+## Appendix Tables
+
+The tables appear above this paragraph.
